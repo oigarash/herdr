@@ -3185,7 +3185,7 @@ fn copy_reader_to_local_stream<R: io::Read>(
                 Ok(count) => written += count,
                 Err(err) if err.kind() == io::ErrorKind::Interrupted => continue,
                 Err(err) if err.kind() == io::ErrorKind::WouldBlock => {
-                    thread::sleep(BRIDGE_IO_POLL);
+                    crate::platform::wait_client_stream_writable(stream)?;
                 }
                 Err(err) => return Err(err),
             }

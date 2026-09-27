@@ -67,6 +67,14 @@ pub(crate) fn wait_client_stream_readable(
     Ok(())
 }
 
+pub(crate) fn wait_client_stream_writable(
+    _stream: &crate::ipc::LocalStream,
+) -> std::io::Result<()> {
+    // Windows named-pipe writes retain the existing bounded polling behavior.
+    std::thread::sleep(Duration::from_millis(1));
+    Ok(())
+}
+
 pub(crate) fn forward_remote_bridge_stdio(
     stream: crate::ipc::LocalStream,
     _idle_timeout: bool,

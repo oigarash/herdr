@@ -144,6 +144,25 @@ pub(crate) fn wait_client_stream_readable(stream: &crate::ipc::LocalStream) -> s
     Ok(())
 }
 
+pub(crate) fn wait_client_stream_writable(stream: &crate::ipc::LocalStream) -> std::io::Result<()> {
+    use std::os::fd::{AsFd as _, AsRawFd as _};
+    let crate::ipc::LocalStream::UdSocket(stream) = stream;
+    let mut descriptor = libc::pollfd {
+        fd: stream.as_fd().as_raw_fd(),
+        events: libc::POLLOUT,
+        revents: 0,
+    };
+    // Keep remote bridge shutdown responsive even if the client stops reading.
+    let result = unsafe { libc::poll(&mut descriptor, 1, 100) };
+    if result < 0 {
+        let error = std::io::Error::last_os_error();
+        if error.kind() != std::io::ErrorKind::Interrupted {
+            return Err(error);
+        }
+    }
+    Ok(())
+}
+
 pub(crate) fn forward_remote_bridge_stdio(
     stream: crate::ipc::LocalStream,
     idle_timeout: bool,
